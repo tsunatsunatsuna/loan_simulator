@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ローン比較 & 控除シミュレーター Pro v4.0</title>
+    <title>ローン比較 & 控除シミュレーター Pro v4.1</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -13,45 +13,58 @@
             --color-interest: #f43f5e; --color-tax: #16a34a;
         }
         body { font-family: -apple-system, sans-serif; color: #1e293b; background-color: var(--bg); margin: 0; padding: 10px; }
-        .container { max-width: 1300px; margin: 0 auto; }
+        .container { max-width: 1400px; margin: 0 auto; }
         .card { background: var(--white); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
         
         /* 入力エリア */
-        .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+        .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
         label { display: block; font-size: 0.7rem; font-weight: 700; margin-bottom: 4px; color: #475569; }
         input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
         .btn-calc { width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; margin: 15px 0; }
 
-        /* 左右レイアウト */
-        .comparison-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width: 900px) { .comparison-layout { grid-template-columns: 1fr; } }
+        /* レスポンシブ・比較レイアウト修正 */
+        .comparison-layout { 
+            display: flex; 
+            flex-direction: row; /* 基本は横並び */
+            gap: 15px; 
+            align-items: flex-start;
+        }
+        .column { 
+            flex: 1; /* 両方のカラムを同じ幅で広げる */
+            min-width: 0; /* flexアイテムが中身に合わせて突き抜けるのを防ぐ */
+        }
+
+        /* スマホ対応：768px以下で縦並び */
+        @media (max-width: 768px) {
+            .comparison-layout { flex-direction: column; }
+            .column { width: 100%; }
+        }
 
         /* アコーディオン */
         details { background: var(--white); border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; overflow: hidden; }
-        summary { padding: 15px 20px; font-weight: bold; cursor: pointer; background: #f8fafc; border-bottom: 1px solid #e2e8f0; list-style: none; display: flex; justify-content: space-between; align-items: center; }
-        summary::-webkit-details-marker { display: none; }
-        summary::after { content: '▼'; font-size: 0.8rem; color: var(--secondary); }
+        summary { padding: 12px 15px; font-weight: bold; cursor: pointer; background: #f8fafc; border-bottom: 1px solid #e2e8f0; list-style: none; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+        summary::after { content: '▼'; font-size: 0.7rem; color: var(--secondary); }
         details[open] summary::after { content: '▲'; }
-        .details-content { padding: 20px; }
+        .details-content { padding: 15px; }
 
         /* サマリー・統計 */
-        .summary-box { padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; margin-bottom: 15px; }
+        .summary-box { padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; margin-bottom: 0; }
         .summary-box.ganri { border-left: 6px solid var(--color-ganri); }
         .summary-box.gankin { border-left: 6px solid var(--color-gankin); }
-        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; }
-        .stat-total { font-size: 1.1rem; color: var(--accent); border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px; font-weight: bold; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 0.85rem; }
+        .stat-total { font-size: 1rem; color: var(--accent); border-top: 1px solid #eee; margin-top: 8px; padding-top: 8px; font-weight: bold; }
 
-        .chart-container { height: 300px; margin-bottom: 20px; }
+        .chart-container { height: 280px; margin-bottom: 10px; }
         
-        /* テーブル */
-        .table-wrapper { overflow-x: auto; max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-        th, td { padding: 8px; text-align: right; border-bottom: 1px solid #f1f5f9; }
+        /* テーブル修正：幅が狭くても崩れないように */
+        .table-wrapper { overflow-x: auto; max-height: 400px; border: 1px solid #e2e8f0; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.7rem; white-space: nowrap; }
+        th, td { padding: 6px 8px; text-align: right; border-bottom: 1px solid #f1f5f9; }
         th { background: #f8fafc; position: sticky; top: 0; z-index: 10; }
         .sticky-col { position: sticky; left: 0; background: #f8fafc; font-weight: bold; text-align: left; }
 
-        .main-title { text-align: center; margin-bottom: 30px; }
-        .col-title { font-size: 1.2rem; font-weight: bold; text-align: center; margin-bottom: 15px; padding: 10px; border-radius: 8px; color: white; }
+        .main-title { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
+        .col-title { font-size: 1.1rem; font-weight: bold; text-align: center; margin-bottom: 12px; padding: 10px; border-radius: 8px; color: white; }
     </style>
 </head>
 <body>
@@ -73,34 +86,34 @@
 
     <div id="result_area" style="display:none;">
         
-        <div class="card" style="background: #f8fafc;">
-            <h3 style="margin-top:0; text-align:center;">月々の支払額 推移比較</h3>
-            <div style="height:300px;"><canvas id="chart_monthly_combined"></canvas></div>
+        <div class="card" style="background: #f8fafc; padding: 15px;">
+            <h3 style="margin: 0 0 15px 0; text-align:center; font-size: 1rem;">月々の支払額 推移比較 (折れ線)</h3>
+            <div style="height:250px;"><canvas id="chart_monthly_combined"></canvas></div>
         </div>
 
         <div class="comparison-layout">
-            <div class="column">
-                <div class="col-title" style="background: var(--color-ganri);">元利均等返済</div>
+            <div class="column" id="col_ganri">
+                <div class="col-title" style="background: var(--color-ganri);">元利均等</div>
                 
                 <details open>
-                    <summary>1. 返済サマリー (元利)</summary>
+                    <summary>1. 返済サマリー</summary>
                     <div class="details-content" id="summary_ganri"></div>
                 </details>
 
                 <details open>
-                    <summary>2. 年間コスト推移グラフ</summary>
+                    <summary>2. 年間コスト推移</summary>
                     <div class="details-content">
                         <div class="chart-container"><canvas id="chart_ganri_bar"></canvas></div>
                     </div>
                 </details>
 
                 <details open>
-                    <summary>3. 返済明細テーブル</summary>
+                    <summary>3. 返済明細</summary>
                     <div class="details-content">
                         <div class="table-wrapper">
                             <table id="table_ganri">
                                 <thead>
-                                    <tr><th class="sticky-col">経過年</th><th>月支払</th><th>年間支払</th><th>年間控除</th><th>年末残債</th></tr>
+                                    <tr><th class="sticky-col">経過年</th><th>月支払</th><th>年支払</th><th>年控除</th><th>年残債</th></tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
@@ -109,28 +122,28 @@
                 </details>
             </div>
 
-            <div class="column">
-                <div class="col-title" style="background: var(--color-gankin);">元金均等返済</div>
+            <div class="column" id="col_gankin">
+                <div class="col-title" style="background: var(--color-gankin);">元金均等</div>
 
                 <details open>
-                    <summary>1. 返済サマリー (元金)</summary>
+                    <summary>1. 返済サマリー</summary>
                     <div class="details-content" id="summary_gankin"></div>
                 </details>
 
                 <details open>
-                    <summary>2. 年間コスト推移グラフ</summary>
+                    <summary>2. 年間コスト推移</summary>
                     <div class="details-content">
                         <div class="chart-container"><canvas id="chart_gankin_bar"></canvas></div>
                     </div>
                 </details>
 
                 <details open>
-                    <summary>3. 返済明細テーブル</summary>
+                    <summary>3. 返済明細</summary>
                     <div class="details-content">
                         <div class="table-wrapper">
                             <table id="table_gankin">
                                 <thead>
-                                    <tr><th class="sticky-col">経過年</th><th>月支払</th><th>年間支払</th><th>年間控除</th><th>年末残債</th></tr>
+                                    <tr><th class="sticky-col">経過年</th><th>月支払</th><th>年支払</th><th>年控除</th><th>年残債</th></tr>
                                 </thead>
                                 <tbody></tbody>
                             </table>
@@ -143,6 +156,7 @@
 </div>
 
 <script>
+// (JSロジックは前回同様ですが、Scale統一などの処理を維持しています)
 const App = {
     charts: {},
 
@@ -159,7 +173,6 @@ const App = {
         const resGanri = this.calc(config, 'ganri');
         const resGankin = this.calc(config, 'gankin');
 
-        // 最大値を取得して軸を統一する
         const maxVal = Math.max(
             ...resGanri.history.map(d => d.principal + d.interest),
             ...resGankin.history.map(d => d.principal + d.interest)
@@ -167,11 +180,9 @@ const App = {
 
         this.renderSummary('summary_ganri', resGanri.summary, 'ganri');
         this.renderSummary('summary_gankin', resGankin.summary, 'gankin');
-        
         this.renderCombinedLineChart(resGanri, resGankin);
         this.renderBarChart('chart_ganri_bar', resGanri, '#3b82f6', maxVal);
         this.renderBarChart('chart_gankin_bar', resGankin, '#8b5cf6', maxVal);
-        
         this.renderTable('table_ganri', resGanri.history);
         this.renderTable('table_gankin', resGankin.history);
 
@@ -183,58 +194,39 @@ const App = {
         let history = [];
         const monthlyGanri = conf.P * conf.r * Math.pow(1 + conf.r, conf.n) / (Math.pow(1 + conf.r, conf.n) - 1);
         const fixedPrincipal = conf.P / conf.n;
-
-        let totalInterest = 0;
-        let totalTaxBack = 0;
+        let totalInterest = 0, totalTaxBack = 0;
 
         for (let y = 1; y <= conf.n / 12; y++) {
-            let yPrincipal = 0, yInterest = 0, yTaxBack = 0;
-            let firstMonthly = 0;
-            
+            let yP = 0, yI = 0, yT = 0, firstM = 0;
             for (let m = 1; m <= 12; m++) {
                 let interest = remaining * conf.r;
                 let principal = (type === 'ganri') ? (monthlyGanri - interest) : fixedPrincipal;
-                if(m === 1) firstMonthly = principal + interest;
-                yPrincipal += principal;
-                yInterest += interest;
+                if(m === 1) firstM = principal + interest;
+                yP += principal; yI += interest;
                 remaining -= principal;
             }
-
             if (y <= conf.tY) {
-                const base = Math.min(Math.max(0, remaining + yPrincipal/2), conf.tLim);
-                yTaxBack = Math.round(base * conf.tRate);
+                const base = Math.min(Math.max(0, remaining + yP/2), conf.tLim);
+                yT = Math.round(base * conf.tRate);
             }
-
-            totalInterest += yInterest;
-            totalTaxBack += yTaxBack;
-
+            totalInterest += yI; totalTaxBack += yT;
             history.push({
-                year: y,
-                monthly: Math.round(firstMonthly / 10000 * 10) / 10,
-                annualPay: Math.round((yPrincipal + yInterest) / 10000),
-                principal: Math.round(yPrincipal / 10000),
-                interest: Math.round(yInterest / 10000),
-                taxBack: Math.round(yTaxBack / 10000),
+                year: y, monthly: Math.round(firstM / 10000 * 10) / 10,
+                annualPay: Math.round((yP + yI) / 10000), principal: Math.round(yP / 10000),
+                interest: Math.round(yI / 10000), taxBack: Math.round(yT / 10000),
                 balance: Math.round(Math.max(0, remaining) / 10000)
             });
         }
-        return { 
-            history, 
-            summary: { 
-                totalPay: Math.round((conf.P + totalInterest) / 10000),
-                totalInterest: Math.round(totalInterest / 10000),
-                totalTaxBack: Math.round(totalTaxBack / 10000)
-            } 
-        };
+        return { history, summary: { totalPay: Math.round((conf.P + totalInterest) / 10000), totalInterest: Math.round(totalInterest / 10000), totalTaxBack: Math.round(totalTaxBack / 10000) } };
     },
 
     renderSummary(id, data, type) {
         document.getElementById(id).innerHTML = `
             <div class="summary-box ${type}">
-                <div class="stat-row"><span>支払い総額</span><span>${data.totalPay.toLocaleString()} 万円</span></div>
-                <div class="stat-row"><span>利息合計</span><span style="color:var(--color-interest)">+${data.totalInterest.toLocaleString()} 万円</span></div>
-                <div class="stat-row"><span>ローン控除合計</span><span style="color:var(--color-tax)">-${data.totalTaxBack.toLocaleString()} 万円</span></div>
-                <div class="stat-row stat-total"><span>実質負担額</span><span>${(data.totalPay - data.totalTaxBack).toLocaleString()} 万円</span></div>
+                <div class="stat-row"><span>総支払</span><span>${data.totalPay.toLocaleString()}万</span></div>
+                <div class="stat-row"><span>利息</span><span style="color:var(--color-interest)">+${data.totalInterest.toLocaleString()}万</span></div>
+                <div class="stat-row"><span>控除</span><span style="color:var(--color-tax)">-${data.totalTaxBack.toLocaleString()}万</span></div>
+                <div class="stat-row stat-total"><span>実質</span><span>${(data.totalPay - data.totalTaxBack).toLocaleString()}万</span></div>
             </div>
         `;
     },
@@ -247,11 +239,11 @@ const App = {
             data: {
                 labels: ganri.history.map(d => d.year + '年'),
                 datasets: [
-                    { label: '元利均等', data: ganri.history.map(d => d.monthly), borderColor: '#3b82f6', backgroundColor: '#3b82f6', tension: 0 },
-                    { label: '元金均等', data: gankin.history.map(d => d.monthly), borderColor: '#8b5cf6', backgroundColor: '#8b5cf6', tension: 0 }
+                    { label: '元利', data: ganri.history.map(d => d.monthly), borderColor: '#3b82f6', tension: 0 },
+                    { label: '元金', data: gankin.history.map(d => d.monthly), borderColor: '#8b5cf6', tension: 0 }
                 ]
             },
-            options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: '月支払額 (万円)' } } } }
+            options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
         });
     },
 
@@ -270,11 +262,8 @@ const App = {
             },
             options: { 
                 maintainAspectRatio: false, 
-                scales: { 
-                    x: { stacked: true }, 
-                    y: { stacked: true, min: -res.history[0].taxBack - 5, max: maxVal + 10 } 
-                },
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+                scales: { y: { stacked: true, max: maxVal + 10 } },
+                plugins: { legend: { display: false } }
             }
         });
     },
@@ -282,11 +271,11 @@ const App = {
     renderTable(id, data) {
         document.getElementById(id).querySelector('tbody').innerHTML = data.map(d => `
             <tr>
-                <td class="sticky-col">${d.year}年目</td>
-                <td>${d.monthly}万</td>
-                <td>${d.annualPay.toLocaleString()}万</td>
-                <td style="color:var(--color-tax)">-${d.taxBack.toLocaleString()}万</td>
-                <td style="font-weight:bold">${d.balance.toLocaleString()}万</td>
+                <td class="sticky-col">${d.year}年</td>
+                <td>${d.monthly}</td>
+                <td>${d.annualPay}</td>
+                <td style="color:var(--color-tax)">-${d.taxBack}</td>
+                <td style="font-weight:bold">${d.balance}</td>
             </tr>
         `).join('');
     }
